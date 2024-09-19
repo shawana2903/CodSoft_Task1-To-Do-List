@@ -4,7 +4,7 @@ from datetime import datetime
 
 # Define a class to manage the tasks
 class Task:
-    def _init_(self, title, description="", due_date=None):
+    def __init__(self, title, description="", due_date=None):
         self.title = title
         self.description = description
         self.is_completed = False
