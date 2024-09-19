@@ -45,7 +45,7 @@ class Task:
 
 # Class to handle the to-do list
 class ToDoList:
-    def _init_(self):
+    def __init__(self):
         self.tasks = []
 
     def add_task(self, task):
@@ -81,7 +81,7 @@ class ToDoList:
 
 # GUI Application using ipywidgets
 class ToDoApp:
-    def _init_(self):
+    def __init__(self):
         self.to_do_list = ToDoList()
 
         # Create widgets for task entry
