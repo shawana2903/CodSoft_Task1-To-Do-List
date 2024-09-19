@@ -1,0 +1,208 @@
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+from datetime import datetime
+
+# Define a class to manage the tasks
+class Task:
+    def _init_(self, title, description="", due_date=None):
+        self.title = title
+        self.description = description
+        self.is_completed = False
+        self.is_cancelled = False
+        self.is_delayed = False
+        self.is_important = False
+        self.due_date = due_date
+
+    def mark_as_completed(self):
+        self.is_completed = True
+
+    def mark_as_cancelled(self):
+        self.is_cancelled = True
+
+    def mark_as_delayed(self):
+        self.is_delayed = True
+
+    def mark_as_important(self):
+        self.is_important = True
+
+    def update(self, title=None, description=None, due_date=None):
+        if title:
+            self.title = title
+        if description:
+            self.description = description
+        if due_date:
+            self.due_date = due_date
+
+    def _repr_(self):
+        status = "Completed" if self.is_completed else "Pending"
+        if self.is_cancelled:
+            status = "Cancelled"
+        if self.is_delayed:
+            status = "Delayed"
+        important_flag = "Important" if self.is_important else ""
+        due_date_str = self.due_date.strftime("%Y-%m-%d") if self.due_date else "No due date"
+        return f"Task: {self.title}, Status: {status}, Due Date: {due_date_str}, Description: {self.description}, {important_flag}"
+
+# Class to handle the to-do list
+class ToDoList:
+    def _init_(self):
+        self.tasks = []
+
+    def add_task(self, task):
+        self.tasks.append(task)
+
+    def delete_task(self, task_id):
+        if 0 <= task_id < len(self.tasks):
+            return self.tasks.pop(task_id)
+        return None
+
+    def mark_task_completed(self, task_id):
+        if 0 <= task_id < len(self.tasks):
+            self.tasks[task_id].mark_as_completed()
+
+    def mark_task_cancelled(self, task_id):
+        if 0 <= task_id < len(self.tasks):
+            self.tasks[task_id].mark_as_cancelled()
+
+    def mark_task_delayed(self, task_id):
+        if 0 <= task_id < len(self.tasks):
+            self.tasks[task_id].mark_as_delayed()
+
+    def mark_task_important(self, task_id):
+        if 0 <= task_id < len(self.tasks):
+            self.tasks[task_id].mark_as_important()
+
+    def view_tasks(self, show_completed=False):
+        task_list = []
+        for idx, task in enumerate(self.tasks, 1):
+            if not task.is_completed or show_completed:
+                task_list.append(f"ID {idx}: {task}")
+        return task_list
+
+# GUI Application using ipywidgets
+class ToDoApp:
+    def _init_(self):
+        self.to_do_list = ToDoList()
+
+        # Create widgets for task entry
+        self.task_title = widgets.Text(description="Title:")
+        self.task_description = widgets.Text(description="Description:")
+        self.task_due_date = widgets.Text(description="Due Date (YYYY-MM-DD):")
+
+        # Create buttons for task management
+        self.add_button = widgets.Button(description="Add Task")
+        self.add_button.on_click(self.add_task)
+
+        self.view_button = widgets.Button(description="View Tasks")
+        self.view_button.on_click(self.view_tasks)
+
+        # New buttons for task operations
+        self.delete_button = widgets.Button(description="Delete Task")
+        self.delete_button.on_click(self.delete_task)
+
+        self.completed_button = widgets.Button(description="Mark Completed")
+        self.completed_button.on_click(self.mark_task_completed)
+
+        self.cancelled_button = widgets.Button(description="Mark Cancelled")
+        self.cancelled_button.on_click(self.mark_task_cancelled)
+
+        self.delayed_button = widgets.Button(description="Mark Delayed")
+        self.delayed_button.on_click(self.mark_task_delayed)
+
+        self.important_button = widgets.Button(description="Mark Important")
+        self.important_button.on_click(self.mark_task_important)
+
+        # Input for task selection by ID
+        self.task_id = widgets.IntText(description="Task ID:")
+
+        # Output area for displaying messages or task lists
+        self.output = widgets.Output()
+
+        # Display the GUI components
+        display(self.task_title, self.task_description, self.task_due_date, 
+                self.add_button, self.view_button, self.task_id, 
+                self.delete_button, self.completed_button, self.cancelled_button, 
+                self.delayed_button, self.important_button, self.output)
+
+    def add_task(self, b):
+        title = self.task_title.value
+        description = self.task_description.value
+        due_date_str = self.task_due_date.value
+        due_date = None
+
+        if due_date_str:
+            try:
+                due_date = datetime.strptime(due_date_str, "%Y-%m-%d")
+            except ValueError:
+                with self.output:
+                    clear_output()
+                    print("Invalid date format. Please use YYYY-MM-DD.")
+                return
+
+        new_task = Task(title, description, due_date)
+        self.to_do_list.add_task(new_task)
+
+        with self.output:
+            clear_output()
+            print(f"Task '{title}' added successfully!")
+
+        # Clear input fields after adding a task
+        self.task_title.value = ''
+        self.task_description.value = ''
+        self.task_due_date.value = ''
+
+    def delete_task(self, b):
+        task_id = self.task_id.value - 1
+        deleted_task = self.to_do_list.delete_task(task_id)
+
+        with self.output:
+            clear_output()
+            if deleted_task:
+                print(f"Task '{deleted_task.title}' deleted successfully!")
+            else:
+                print("Task ID not found!")
+
+    def mark_task_completed(self, b):
+        task_id = self.task_id.value - 1
+        self.to_do_list.mark_task_completed(task_id)
+
+        with self.output:
+            clear_output()
+            print(f"Task ID {task_id + 1} marked as completed.")
+
+    def mark_task_cancelled(self, b):
+        task_id = self.task_id.value - 1
+        self.to_do_list.mark_task_cancelled(task_id)
+
+        with self.output:
+            clear_output()
+            print(f"Task ID {task_id + 1} marked as cancelled.")
+
+    def mark_task_delayed(self, b):
+        task_id = self.task_id.value - 1
+        self.to_do_list.mark_task_delayed(task_id)
+
+        with self.output:
+            clear_output()
+            print(f"Task ID {task_id + 1} marked as delayed.")
+
+    def mark_task_important(self, b):
+        task_id = self.task_id.value - 1
+        self.to_do_list.mark_task_important(task_id)
+
+        with self.output:
+            clear_output()
+            print(f"Task ID {task_id + 1} marked as important.")
+
+    def view_tasks(self, b):
+        tasks = self.to_do_list.view_tasks(show_completed=True)
+        with self.output:
+            clear_output()
+            if tasks:
+                for task in tasks:
+                    print(task)
+            else:
+                print("No tasks found!")
+
+# Run the ToDoApp in Google Colab or Jupyter
+app = ToDoApp()
